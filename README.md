@@ -89,3 +89,19 @@ func main() {
 
 }
 ```
+
+- With embeded types, the embeded types semantic (i.e. pointer or value), takes precedences over the parent semantic. 
+
+```go
+    // Even though Admin is using value semantics, User will still use pointer.
+    // If User is embedded into Admin, methods on User are still pointer semantics.
+	admin := Admin{
+		User: &User{
+			Name:  "john smith",
+			Email: "john@email.com",
+		},
+		Level: "super",
+    }
+```
+
+- When embedding types, if methods collide, the parent method takes precedence.
