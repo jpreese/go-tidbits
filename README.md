@@ -105,3 +105,18 @@ func main() {
 ```
 
 - When embedding types, if methods collide, the parent method takes precedence.
+
+## 10/14/2019
+
+- When using `errors.As`, you must use the same value/pointer semantics for the exposed error. For example, if the API returns
+
+```go
+return MyError{} // not using &MyError{}
+```
+
+Then your `.As()` code must be
+
+```go
+var e someapi.MyError
+errors.As(err, &e)
+```
