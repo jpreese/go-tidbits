@@ -11,6 +11,8 @@
 ## 10/11/2019
 - When resolving whether or not a type satisfies an interface, if the type has a `pointer` receiver, if you create that type as a value type, the type will not satisfy the interface. However, if the type has a `value` receiver, then creating that type as a pointer _or_ value will satisfy the interface.
 
+This is typically known as the _method set_ of a type.
+
 ```go
 type Fooer interface {
 	Foo()
@@ -46,55 +48,11 @@ func main() {
 }
 ```
 
-- Maps don't appear to completely resolve to the type when indexed..
-```go
-package main
-
-type S struct {
-	data string
-}
-
-func (s S) Read() string {
-	return s.data
-}
-
-func (s *S) Write(str string) {
-	s.data = str
-}
-
-func main() {
-
-	sVals := map[int]S{}
-	sVals[1] = S{"A"}
-
-	sVals[1].Read()
-	// This line fails to compile. sVals[1] must not resolve to type S{}?
-	// sVals[1].Write("ok")
-
-	// .. however, moving it out of the map, it's fine
-	noMap := S{"A"}
-	noMap.Write("ok")
-
-	// These are all OK
-	sPtrs := map[int]*S{}
-	sPtrs[1] = &S{"A"}
-
-	sPtrs[1].Read()
-	sPtrs[1].Write("ok")
-
-	// Using a map is doing something wonky..
-	// The semantics feel like interface resolution.
-	// sVals (value type) can only use value receivers
-	// sPtrs (pointer type) can use value and pointer receivers
-
-}
-```
-
 - With embeded types, the embeded types semantic (i.e. pointer or value), takes precedences over the parent semantic. 
 
 ```go
     // Even though Admin is using value semantics, User will still use pointer.
-    // If User is embedded into Admin, methods on User are still pointer semantics.
+    // If User is embedded into Admin, methods on User are still pointer semantics. TYPE LIFE.
 	admin := Admin{
 		User: &User{
 			Name:  "john smith",
@@ -105,3 +63,28 @@ func main() {
 ```
 
 - When embedding types, if methods collide, the parent method takes precedence.
+
+## 10/16/2019
+
+- When checking if an error is a specific type, value and pointer semantics still matter. e.g. 
+
+If the API you're using uses Value semantics for an error, you must use the same type when using errors.As() from 1.13. A lot of example tutorials say
+
+```go
+var e *MyError
+errors.As(err, &e)
+```
+
+This fails if MyError uses value semantics from the API, i.e.
+
+```go
+return MyError{}
+```
+
+Because `MyError` is of type `MyError`, not `*MyError`
+
+## Other Fun Facts Unrelated to Go
+
+### Docker
+
+- When using the `--target` argument, you can target a specific build step to be built in a Dockerfile. However, the `FROM` layers above will still be built, even if the `target` has no dependency on it.
